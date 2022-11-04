@@ -1,6 +1,7 @@
 # Project
 
-Scripts to simulate PV defaults and to detect them
+Scripts to simulate PV defaults and to detect them.
+
 The project is built for and includes the jupyter notebook used during DATASUN workshop 2022 on "PV fault detection"
 
 ## General Information
