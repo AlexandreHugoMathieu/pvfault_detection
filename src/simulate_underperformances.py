@@ -5,29 +5,41 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from pvlib.solarposition import get_solarposition
-
 from pvlib.soiling import hsu
 
-from src.pv_models import fit_vmp_king, fit_imp_king, inv_eff_knn, imp_king, vmp_king, vi_curve_singlediode, get_Pmpp, \
-    get_temp_cell
+from src.data_utils import get_temp_cell
+from src.pv_models import fit_vmp_king, fit_imp_king, inv_eff_knn, imp_king, vmp_king, vi_curve_singlediode, get_Pmpp
 
 
-def scale_system_iv_curve(pv_params: dict, vdc: float, idc: float, poa_global: float, temp_cell: float) -> pd.DataFrame:
+def scale_system_iv_curve(pv_params: dict,
+                          vdc: float,
+                          idc: float,
+                          g_poa_effective: float,
+                          temp_cell: float) -> pd.DataFrame:
     """
-    Scale  the IV curve of a module to the system according to Idc and Vdc
+    Scale the module IV curve to the whole system via Idc and Vdc
 
-    :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
-                pvlib.pvsystem.retrieve_sam("CECmod")
-    :param vdc: DC Voltage [V]
-    :param idc: DC current [A]
-    :param poa_global: Incident (effective) irradiation [W/m2]
-    :param temp_cell: Cell temperature [°C]
+    Parameters
+    ----------
+    pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
+            pvlib.pvsystem.retrieve_sam("CECmod")
+    vdc: DC Voltage [V]
+    idc: DC current [A]
+    g_poa_effective: In plane (effective) irradiation [W/m2]
+    :temp_cell: Cell temperature [°C]
 
-    :return: pd.Dataframe with VI curve at the system level
+    Returns
+    -------
+    IV curve (pd.DataFrame):
+         * i - IV curve current in amperes.
+         * v - IV curve voltage in volts.
     """
+
     vi_curve = vi_curve_singlediode(pv_params["alpha_sc"], pv_params["a_ref"], pv_params["I_L_ref"],
                                     pv_params["I_o_ref"], pv_params["R_sh_ref"], pv_params["R_s"],
-                                    effective_irradiance=poa_global, temp_cell=temp_cell)
+                                    effective_irradiance=g_poa_effective, temp_cell=temp_cell)
+
+    # Scale the curve by scaling impp and vmpp at vdc and idc (Neglect all possible losses)
     _, impp_mod, vmpp_mod = get_Pmpp(vi_curve, VI_max=True)
     vi_curve["v_system"] = vi_curve["v"] * vdc / vmpp_mod
     vi_curve["i_system"] = vi_curve["i"] * idc / impp_mod
@@ -35,31 +47,78 @@ def scale_system_iv_curve(pv_params: dict, vdc: float, idc: float, poa_global: f
     return vi_curve
 
 
-def king_ratios(poa_global0, temp_cell0, idc0, vdc0, poa_global1, temp_cell1):
-    """Fit King models according to dataset0 and return dataset1/dataset0 model ratios"""
+def king_ratios(poa_global0: pd.Series,
+                temp_cell0: pd.Series,
+                idc0: pd.Series,
+                vdc0: pd.Series,
+                poa_global1: pd.Series,
+                temp_cell1: pd.Series):
+    """
+    Fit King imp and vmp models according to poa_global0 and temp_cell0, estimate imp0/vmp0 and  imp1/vmp1 for the
+    datasets poa_global0/temp_cell0 and poa_global1/temp_cell1.
+    Return imp1/imp0 and vmp1/vmp0 ratios
 
+    Parameters
+    ----------
+    poa_global0
+    temp_cell0
+    idc0
+    vdc0
+    poa_global1
+    temp_cell1
+
+    Returns
+    -------
+
+    """
+    #Fit the king models
     (c1, alpha, imp_ref) = fit_imp_king(poa_global0, temp_cell0, idc0)
     (c2, c3, beta, vmp_ref) = fit_vmp_king(poa_global0, temp_cell0, vdc0)
 
+    # Estimate imp/vmp on the two datasets 0 and 1
     index = poa_global0.index
     imp_k0 = imp_king(poa_global0, temp_cell0, c1, alpha, imp_ref).reindex(index)
     imp_k1 = imp_king(poa_global1, temp_cell1, c1, alpha, imp_ref).reindex(index)
     vmp_k0 = vmp_king(poa_global0, temp_cell0, c2, c3, beta, vmp_ref).reindex(index)
     vmp_k1 = vmp_king(poa_global1, temp_cell1, c2, c3, beta, vmp_ref).reindex(index)
 
+    # Calculate the vmp1/vmp0 and imp1/imp0 ratios
     imp_k_ratio = pd.Series(data=1, index=index)
     vmp_k_ratio = pd.Series(data=1, index=index)
     imp_k_ratio.loc[pd.notna(imp_k0)] = imp_k1 / imp_k0
     vmp_k_ratio.loc[pd.notna(vmp_k0)] = vmp_k1 / vmp_k0
 
+    # Make sure to have all the timesteps
     imp_k_ratio = imp_k_ratio.dropna().reindex(index)
     vmp_k_ratio = vmp_k_ratio.dropna().reindex(index)
 
     return imp_k_ratio, vmp_k_ratio
 
 
-def shading_cond(azimuth: pd.Series, elevation: pd.Series, shade_azi_min=0, shade_azi_max=180, shade_alt=50,
-                 noise_azimuth=(0, 0), noise_elevation=(0, 0)):
+def shading_cond(azimuth: pd.Series,
+                 elevation: pd.Series,
+                 shade_azi_min=0,
+                 shade_azi_max=180,
+                 shade_alt=50,
+                 noise_azimuth=(0, 0),
+                 noise_elevation=(0, 0)):
+    """
+
+    Parameters
+    ----------
+    azimuth
+    elevation
+    shade_azi_min
+    shade_azi_max
+    shade_alt
+    noise_azimuth
+    noise_elevation
+
+    Returns
+    -------
+
+    """
+
     azimuth_noise = pd.Series(np.random.normal(noise_azimuth[0], noise_azimuth[1], len(azimuth)), index=azimuth.index)
     elevation_noise = pd.Series(np.random.normal(noise_elevation[0], noise_elevation[1], len(elevation)),
                                 index=elevation.index)
@@ -407,11 +466,13 @@ if __name__ == '__main__':
 
     # Clipping
     pv_params = retrieve_sam('cecmod')['Instalaciones_Pevafersa_IP_VAP230']  # panel in the field
-    idc_c, vdc_c, pdc_c, pac_c = clipping(poa_global, idc, vdc, pac, pac_max=42000, pv_params=pv_params, temp_air=temp_air)
+    idc_c, vdc_c, pdc_c, pac_c = clipping(poa_global, idc, vdc, pac, pac_max=42000, pv_params=pv_params,
+                                          temp_air=temp_air)
 
     # Soiling
     idc_soil, vdc_soil, pdc_soil, pac_soil = \
-        soiling_effect(poa_global, idc, vdc, pac, weather["rain_fall"], weather["pm_2_5_g.m3"] * 20, weather["pm_10_g.m3"] * 20,
+        soiling_effect(poa_global, idc, vdc, pac, weather["rain_fall"], weather["pm_2_5_g.m3"] * 20,
+                       weather["pm_10_g.m3"] * 20,
                        tilt=18, temp_air=temp_air)
 
     # Bypass short circuit
@@ -428,6 +489,7 @@ if __name__ == '__main__':
 
     if store:
         from src.config import ROOT
+
         pv_shading = pv.copy()
         pv_shading["Idc"], pv_shading["Vdc"], pv_shading["Pdc"], pv_shading["Pac"] = idc_s, vdc_s, pdc_s, pac_s
         pv_shading.to_csv(ROOT / "data" / "pv_data_shading.csv")

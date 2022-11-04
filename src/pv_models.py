@@ -280,7 +280,7 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
 
     Returns
     -------
-    IV curve in a pd.DataFrame:
+    IV curve (pd.DataFrame):
          * i - IV curve current in amperes.
          * v - IV curve voltage in volts.
 
