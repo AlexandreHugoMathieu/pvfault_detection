@@ -1,7 +1,8 @@
-Welcome to pvfault_detection's documentation!
-=============================================
+Welcome to sparse's documentation!
+==================================
 
-The documentation is currently in progress, feel free to provide suggestions !
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
-Contents
---------
+   api
