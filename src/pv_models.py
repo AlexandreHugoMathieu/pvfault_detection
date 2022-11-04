@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from sklearn.neighbors import KNeighborsRegressor
 from pvlib.pvsystem import calcparams_desoto, singlediode, pvwatts_dc
 
-from src.data_check import get_temp_cell
+from src.data_utils import get_temp_cell
 
 
 def inv_eff_knn(pdc_fit: pd.Series, pac_fit: pd.Series, pdc: pd.Series, n_neighbors: int = 100) -> pd.Series:
