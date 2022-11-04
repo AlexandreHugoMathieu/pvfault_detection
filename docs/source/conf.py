@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'pvfault_detection'
+copyright = '2022, Alexandre MATHIEU'
+author = 'Alexandre MATHIEU'
 
 release = '0.1'
 version = '0.1.0'
