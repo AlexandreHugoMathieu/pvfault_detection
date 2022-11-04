@@ -1,60 +1,17 @@
 # Created by A. MATHIEU at 14/10/2022
 import pandas as pd
 import numpy as np
-import json
 import pickle
 import os
 
 from tqdm import tqdm
-from pathlib import Path
 
 from src.config import ROOT
 
 
-def import_config(config_path: Path) -> dict:
-    """Import parameters from a json file"""
-    with open(config_path) as config_file:
-        config = json.load(config_file)
-    missing_keys = {'site', 'analysis', 'irr', 'therm', 'techno', 'layout'} - set(config.keys())
-    if len(missing_keys) > 0:
-        pass
-    # Parse additional data:
-    if 'additional_data' in config['site'].keys():
-        for key, val in config['site']['additional_data'].items():
-            config['site'][key] = val
-        del config['site']['additional_data']
-
-    return config
-
-
-def import_pv_data(pv_path_list) -> pd.DataFrame:
-    """Import pv data from a json file"""
-    pv_data = []
-    for pv_path in pv_path_list:
-        pv_data.append(pd.read_json(pv_path, orient="index"))
-    if len(pv_data) > 0:
-        pv_data = pd.concat(pv_data, axis=0)
-    else:
-        pv_data = pd.DataFrame()
-    if not pv_data.index.is_monotonic_increasing:
-        pass
-    return pv_data
-
-
-def import_weather_data(meteo_path_list) -> pd.DataFrame:
-    """Import weather data from a json file"""
-    meteo_data = []
-    for meteo_path in meteo_path_list:
-        with open(meteo_path) as meteo_file:
-            meteo_json = json.load(meteo_file)
-        meteo_data.append(pd.read_json(json.dumps(meteo_json['data']), orient="index"))
-    meteo_data = pd.concat(meteo_data, axis=0)
-    if not meteo_data.index.is_monotonic_increasing:
-        meteo_data = meteo_data.sort_index()
-    return meteo_data
-
-
 def load_sample_data():
+    """ Load sample data for testing purposes"""
+
     start = "20190801"
     end = "20191101"
     freq = "15min"
@@ -87,19 +44,24 @@ def get_pm_data(start_date="20210101",
                 site: str = "Grenoble Les Frenes",
                 store_pkl: bool = True) -> pd.DataFrame:
     """
-
     Extract airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 and 10 microns from
     data.gouv.
+    https://files.data.gouv.fr/lcsqa/concentrations-de-polluants-atmospheriques-reglementes/temps-reel
 
-    Data available only from 2021 for Grenoble and is a granularity of an hour.
+    Data available only from 2021 for Grenoble.
+    Hourly granularity.
 
-    :param start_date: date from which to start to extract particule matter concentrations
-    :param end_date: date to which to stop to extract particule matter concentrations
-    :param freq: frequency of the recipient (forward fill will be applied)
-    :param site: which site to extract data for ?
-    :param store_pkl: Store the data into pickle file ?
+    Parameters
+    ----------
+    start_date: date from which to start to extract particule matter concentrations
+    end_date: date to which to stop to extract particule matter concentrations
+    freq: frequency of the recipient (forward fill will be applied if the frequency if finer than an hour)
+    site: which site to extract data for ?
+    store_pkl: Store the data into pickle file ?
 
-    :return: Dataframe with Datetime Index containing PM2.5 and PM10.
+    Returns
+    -------
+    Dataframe with Datetime Index containing PM2.5 and PM10 into two columns
     """
     dt_range = pd.date_range(start_date, end_date, freq=freq, tz="CET", inclusive="left")
 
@@ -142,34 +104,4 @@ def get_pm_data(start_date="20210101",
 
 
 if __name__ == '__main__':
-    config = import_config(ROOT / "data" / "config_site_0.json")
-    pv_data = import_pv_data([ROOT / "data" / "pv_data_0.json"])
-    meteo = import_weather_data([ROOT / "data" / "std_meteo_0.json"])
-
-    import pprint
-
-    pprint.pprint(config)
-    print(pv_data.columns)
-    print(meteo.columns)
-
-    start = pd.to_datetime("20190801")
-    end = pd.to_datetime("20191101")
-    index = pd.date_range(start, end, freq="15min")
-    pv_data.index = pd.to_datetime(pv_data.index)
-
-    # Filter through dates and relevant columns
-    pv_data_sample = pv_data.loc[start:end, ["Vdc@mpp-1-1", "Idc@mpp-1-1", "Pac1@inv-1"]]
-    pv_data_sample = pv_data_sample.tz_localize('Etc/GMT-2').tz_convert("UTC")
-    meteo_sample = meteo.loc[start:end, ["Gi%1-0-0", 'Gid%1-0-0', 'Gh', 'Ghc', 'Text', 'wind_speed', "rain_fall"]]
-    meteo_sample = meteo_sample.tz_localize("UTC").iloc[:-1].tz_convert("UTC")
-
-    # Renaming according to https://pvlib-python.readthedocs.io/en/stable/user_guide/variables_style_rules.html#variables-style-rules
-    pv_data_sample = pv_data_sample.rename(columns={'Vdc@mpp-1-1': 'Vdc', 'Idc@mpp-1-1': 'Idc', 'Pac1@inv-1': 'Pac'})
-    meteo_sample = meteo_sample.rename(columns={'Gi%1-0-0': 'poa_global', 'Gid%1-0-0': "poa_diffuse", "Gh": "ghi",
-                                                "Ghc": "ghi_c", "Text": "temp_air"})
-
-    meteo_sample.to_csv(ROOT / "data" / "meteo_sample.csv")
-    pv_data_sample.to_csv(ROOT / "data" / "pv_data_sample.csv")
-
-    meteo_sample = pd.read_csv(ROOT / "data" / "meteo_sample.csv", index_col=0)  # irradiation, temperature, wind
-    pv_data_sample = pd.read_csv(ROOT / "data" / "pv_data_sample.csv", index_col=0)  # Vdc, Idc, Pac
+    weather_data, pv_data = load_sample_data()
