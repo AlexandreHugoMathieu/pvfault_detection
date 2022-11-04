@@ -21,3 +21,5 @@ venv
 # Idea  folder to  ignore (pycharm folder)
 .idea/
 
+build
+
