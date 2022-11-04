@@ -14,8 +14,8 @@ I sincerely thank those developpers who offer the possibilities to other researc
 
 This project:
 - Simulates defaults: fixed shading, bypass diode short circuit, soiling and inverter clipping
-- Include detection methods to detect those defaults
-- Implement a range of pv model such as the PAPM from King: King, D & Kratochvil, J & Boyson, W. (2004). Photovoltaic Array Performance Model. 8. 10.2172/919131.
+- Includes detection methods to detect those defaults
+- Implements and allows to emprically fit a range of pv model such as the PAPM from King: King, D & Kratochvil, J & Boyson, W. (2004). Photovoltaic Array Performance Model. 8. 10.2172/919131.
 
 ## Setup
 
