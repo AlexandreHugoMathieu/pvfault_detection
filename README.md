@@ -6,8 +6,10 @@ The project is built for and includes the jupyter notebook used during DATASUN w
 ## General Information
 
 The repository is broadly inspired from pvlib and pvanalytics.
-pvlib: https://pvlib-python.readthedocs.io/en/stable/
-pvanalytics: https://pvanalytics.readthedocs.io/en/stable/
+
+- pvlib: https://pvlib-python.readthedocs.io/en/stable/
+- pvanalytics: https://pvanalytics.readthedocs.io/en/stable/
+
 I sincerely thank those developpers who offer the possibilities to other researchers to build from the top-edge methods.
 
 This project:
