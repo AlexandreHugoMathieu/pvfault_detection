@@ -21,5 +21,6 @@ venv
 # Idea  folder to  ignore (pycharm folder)
 .idea/
 
+# Local readthedocs folder
 build
 
