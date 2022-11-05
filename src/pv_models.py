@@ -39,17 +39,25 @@ def inv_eff_knn(pdc_fit: pd.Series, pac_fit: pd.Series, pdc: pd.Series, n_neighb
     return ratio
 
 
-def imp_teh(goa_effective: pd.Series, temp_cell: pd.Series,
-            alpha: float, imp_ref: float,
+def imp_teh(goa_effective: pd.Series,
+            temp_cell: pd.Series,
+            alpha: float,
+            imp_ref: float,
             temp_stc: float = 25):
     """
     Estimate Imp according to Christian Jun Qian Teh's article.
 
-    References
-    ----------
+    :param goa_effective:
+    :param temp_cell:
+    :param alpha:
+    :param imp_ref:
+    :param temp_stc:
 
-     .. [1] C. J. Q. Teh, M. Drieberg, S. Soeung and R. Ahmad, "Simple PV Modeling Under Variable Operating Conditions,"
-     in IEEE Access, vol. 9, pp. 96546-96558, 2021, doi: 10.1109/ACCESS.2021.3094801.
+    :return
+
+    References
+    -----------
+     C. J. Q. Teh, M. Drieberg, S. Soeung and R. Ahmad,"Simple PV Modeling Under Variable Operating Conditions,"in IEEE Access, vol. 9, pp. 96546-96558, 2021,doi: 10.1109/ACCESS.2021.3094801.
     """
     imp = imp_ref * (goa_effective / 1000) * (1 + alpha * (temp_cell - temp_stc))
 
@@ -77,10 +85,7 @@ def imp_king(goa_effective: pd.Series,
 
     References
     ----------
-    .. [1] King, D. et al, 2004, "Sandia Photovoltaic Array Performance
-       Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,
-       NM.
-
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
     """
     Ee = goa_effective / reference_irradiance
     imp = imp_ref * (Ee + c1 * (Ee ** 2)) * (1 + alpha * (temp_cell - reference_temperature))
@@ -112,10 +117,7 @@ def vmp_king(goa_effective: pd.Series,
 
     References
     ----------
-    .. [1] King, D. et al, 2004, "Sandia Photovoltaic Array Performance
-       Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,
-       NM.
-
+    .. King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque, NM.
     """
     Ee = goa_effective / reference_irradiance
 
@@ -146,6 +148,7 @@ def fit_imp_king(g_poa_effective: pd.Series,
     # Make sure there is no Nans
     index_fit = imp.dropna().index.intersection(g_poa_effective.dropna().index).intersection(temp_cell.dropna().index)
     imp_fit = imp.reindex(index_fit)
+    g_poa_effective_fit = g_poa_effective.reindex(index_fit)
     g_poa_effective_fit = g_poa_effective.reindex(index_fit)
     temp_cell_fit = temp_cell.reindex(index_fit)
 
@@ -246,7 +249,7 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
          cell types in the parameter estimation algorithm used by NREL.
     :param dEgdT:  The temperature dependence of the energy bandgap at reference
          conditions in units of 1/K. May be either a scalar value
-         (e.g. -0.0002677 as in [1]_) or a DataFrame (this may be useful if
+         (e.g. -0.0002677 ) or a DataFrame (this may be useful if
          dEgdT is a modeled as a function of temperature). For parameters from
          the SAM CEC module database, dEgdT=-0.0002677 is implicit for all cell
          types in the parameter estimation algorithm used by NREL.
