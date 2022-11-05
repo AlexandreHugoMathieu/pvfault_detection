@@ -1,4 +1,5 @@
 # Created by A. MATHIEU at 30/10/2022
+""" Various functions to electrically model pv systems """
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
