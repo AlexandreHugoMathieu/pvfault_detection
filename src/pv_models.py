@@ -136,7 +136,7 @@ def fit_imp_king(g_poa_effective: pd.Series,
 
 
     King imp's parameter inputs: c1, alpha, imp_ref
-    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
     :param imp: Current at the maximum power point [A]
 
@@ -163,9 +163,9 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
     """
     Empirically fit Vmp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
-    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
-    :param imp: Voltage at the maximum power point [A]
+    :param vmp: Voltage at the maximum power point [A]
     :return: King vmp's parameter inputs: c2, c3, beta, vmp_ref
     """
 
@@ -228,22 +228,23 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
     """
     Draw the IV curve according to DeSoto method and the single Diode model.
 
-     :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
-     :param a_ref: The product of the usual diode ideality factor (n, unitless),
+    :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
+    :param a_ref: The product of the usual diode ideality factor (n, unitless),
          number of cells in series (Ns), and cell thermal voltage at reference
          conditions, in units of V.
-     :param IL: The light-generated current (or photocurrent) at reference conditions, in amperes.
-     :param I_o_ref: The dark or diode reverse saturation current at reference conditions, in amperes.
-     :param Rs: The series resistance at reference conditions, in ohms.
-     :param Rsh: The shunt resistance at reference conditions, in ohms.
-     :param n_points: Number of points in the desired IV curve
-     :param effective_irradiance: The irradiance (W/m2) that is converted to photocurrent.
-     :param temp_cell:  The average cell temperature of cells within a module in C.
-     :param EgRef: The energy bandgap at reference temperature in units of eV.
+    :param I_L_ref: The light-generated current (or photocurrent) at reference conditions, in amperes.
+    :param I_o_ref: The dark or diode reverse saturation current at reference conditions, in amperes.
+
+    :param R_sh_ref: The shunt resistance at reference conditions, in ohms.
+    :param R_s: The series resistance at reference conditions, in ohms.
+    :param n_points: Number of points in the desired IV curve
+    :param effective_irradiance: The irradiance (W/m2) that is converted to photocurrent.
+    :param temp_cell:  The average cell temperature of cells within a module in C.
+    :param EgRef: The energy bandgap at reference temperature in units of eV.
          1.121 eV for crystalline silicon. EgRef must be >0.  For parameters
          from the SAM CEC module database, EgRef=1.121 is implicit for all
          cell types in the parameter estimation algorithm used by NREL.
-     :param dEgdT:  The temperature dependence of the energy bandgap at reference
+    :param dEgdT:  The temperature dependence of the energy bandgap at reference
          conditions in units of 1/K. May be either a scalar value
          (e.g. -0.0002677 as in [1]_) or a DataFrame (this may be useful if
          dEgdT is a modeled as a function of temperature). For parameters from
