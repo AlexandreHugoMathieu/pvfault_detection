@@ -117,7 +117,7 @@ def vmp_king(goa_effective: pd.Series,
 
     References
     ----------
-    .. King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque, NM.
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
     """
     Ee = goa_effective / reference_irradiance
 
