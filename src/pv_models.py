@@ -47,14 +47,6 @@ def imp_teh(goa_effective: pd.Series,
     """
     Estimate Imp according to Christian Jun Qian Teh's article.
 
-    :param goa_effective:
-    :param temp_cell:
-    :param alpha:
-    :param imp_ref:
-    :param temp_stc:
-
-    :return
-
     References
     -----------
      C. J. Q. Teh, M. Drieberg, S. Soeung and R. Ahmad,"Simple PV Modeling Under Variable Operating Conditions,"in IEEE Access, vol. 9, pp. 96546-96558, 2021,doi: 10.1109/ACCESS.2021.3094801.
@@ -81,7 +73,8 @@ def imp_king(goa_effective: pd.Series,
     :param imp_ref: Power current reference [A]
     :param reference_temperature:  Reference temperature at STC conditions [C]
     :param reference_irradiance: Reference Irradiance at STC conditions [W/m2]
-    :return: imp(pd.Series) Current at maximum power point
+
+    :return: imp (pd.Series): Current at maximum power point
 
     References
     ----------
@@ -113,7 +106,7 @@ def vmp_king(goa_effective: pd.Series,
     :param reference_temperature:  Reference temperature at STC conditions [C]
     :param reference_irradiance: Reference Irradiance at STC conditions [W/m2]
 
-    :return: vmp (pd.Series) Voltage at maximum power point
+    :return: vmp (pd.Series): Voltage at maximum power point
 
     References
     ----------
@@ -135,9 +128,8 @@ def fit_imp_king(g_poa_effective: pd.Series,
                  imp: pd.Series):
     """
     Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
-
-
     King imp's parameter inputs: c1, alpha, imp_ref
+
     :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
     :param imp: Current at the maximum power point [A]
@@ -169,6 +161,7 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
     :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
     :param vmp: Voltage at the maximum power point [A]
+
     :return: King vmp's parameter inputs: c2, c3, beta, vmp_ref
     """
 
