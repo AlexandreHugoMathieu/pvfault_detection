@@ -45,7 +45,7 @@ def imp_teh(goa_effective: pd.Series, temp_cell: pd.Series,
     """
     Estimate Imp according to Christian Jun Qian Teh's article.
 
-     References
+    References
     ----------
 
      .. [1] C. J. Q. Teh, M. Drieberg, S. Soeung and R. Ahmad, "Simple PV Modeling Under Variable Operating Conditions,"
@@ -76,7 +76,7 @@ def imp_king(goa_effective: pd.Series,
     :return: imp(pd.Series) Current at maximum power point
 
     References
-    -------
+    ----------
     .. [1] King, D. et al, 2004, "Sandia Photovoltaic Array Performance
        Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,
        NM.
@@ -256,7 +256,7 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
          * v - IV curve voltage in volts.
 
     References
-    -------
+    ----------
     Strongly inspired/taken from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
 
     """
