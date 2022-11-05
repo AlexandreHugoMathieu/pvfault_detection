@@ -107,10 +107,11 @@ def vmp_king(goa_effective: pd.Series,
     :param vmp_ref: Power voltage reference [V]
     :param reference_temperature:  Reference temperature at STC conditions [C]
     :param reference_irradiance: Reference Irradiance at STC conditions [W/m2]
+
     :return: vmp (pd.Series) Voltage at maximum power point
 
     References
-    -------
+    ----------
     .. [1] King, D. et al, 2004, "Sandia Photovoltaic Array Performance
        Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,
        NM.
@@ -134,8 +135,6 @@ def fit_imp_king(g_poa_effective: pd.Series,
     Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
 
-    Returns
-    -------
     King imp's parameter inputs: c1, alpha, imp_ref
     :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
