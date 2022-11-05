@@ -1,12 +1,15 @@
 Welcome to pvfault_detection's documentation!
 =============================================
 
-The documentation is currently in progress, feel free to provide suggestions !
+.. note::
+
+   This project is under active development.
 
 Contents
 --------
 
 .. toctree::
-   :maxdepth: 2
 
+   content
    api
+

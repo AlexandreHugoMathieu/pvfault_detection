@@ -15,16 +15,12 @@ def inv_eff_knn(pdc_fit: pd.Series, pac_fit: pd.Series, pdc: pd.Series, n_neighb
     """
     Fit a KNN model and predict the AC/DC efficiency
 
-    Parameters
-    ----------
-    pdc_fit: DC power [W] to fit the model
-    pac_fit: AC power [W] to fit the model
-    pdc: DC power [W] to predict the ratio for
-    n_neighbors: Number of neighbors in the KNN model
+    :param pdc_fit: DC power [W] to fit the model
+    :param pac_fit: AC power [W] to fit the model
+    :param pdc: DC power [W] to predict the ratio for
+    :param n_neighbors: Number of neighbors in the KNN model
 
-    Returns
-    -------
-    Predicted ratios from the KNN model
+    :return: Predicted ratios from the KNN model
     """
     # Prepare the index with no nans and 0s to fit the model
     index_fit = pdc_fit.dropna().index.intersection(pac_fit.dropna().index)
@@ -68,21 +64,16 @@ def imp_king(goa_effective: pd.Series,
              reference_temperature: float = 25,
              reference_irradiance: float = 1000) -> pd.Series:
     """
+    Estimate Imp at the maximum power point according to King's model.
 
-    Parameters
-    ----------
-    goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    temp_cell:  Cell temperature [C].
-    c1: empirically determined coefficient
-    alpha: Maximum power current temperature coefficient at reference condition (1/C)
-    imp_ref: Power current reference [A]
-    reference_temperature:  Reference temperature at STC conditions [C]
-    reference_irradiance :  Reference Irradiance at STC conditions [W/m2]
-
-    Returns
-    -------
-    imp: pd.Series
-        Current at maximum power point
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param temp_cell:  Cell temperature [C].
+    :param c1: empirically determined coefficient
+    :param alpha: Maximum power current temperature coefficient at reference condition (1/C)
+    :param imp_ref: Power current reference [A]
+    :param reference_temperature:  Reference temperature at STC conditions [C]
+    :param reference_irradiance: Reference Irradiance at STC conditions [W/m2]
+    :return: imp(pd.Series) Current at maximum power point
 
     References
     -------
@@ -106,23 +97,17 @@ def vmp_king(goa_effective: pd.Series,
              reference_temperature: float = 25,
              reference_irradiance: float = 1000):
     """
-    Estimate Vmp at maximum power according to King's model.
-    
-    Parameters
-    ----------
-    goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    temp_cell:  Cell temperature [C].
-    c2: empirically determined coefficient
-    c3: empirically determined coefficient
-    beta: Open circuit voltage temperature coefficient at reference condition (V/C)
-    vmp_ref: Power voltage reference [V]
-    reference_temperature  :  Reference temperature at STC conditions [C]
-    reference_irradiance  :  Reference Irradiance at STC conditions [W/m2]
+    Estimate Vmp at the maximum power point according to King's model.
 
-    Returns
-    -------
-    vmp: pd.Series
-        Voltage at maximum power point
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param temp_cell:  Cell temperature [C].
+    :param c2: empirically determined coefficient
+    :param c3: empirically determined coefficient
+    :param beta: Open circuit voltage temperature coefficient at reference condition (V/C)
+    :param vmp_ref: Power voltage reference [V]
+    :param reference_temperature:  Reference temperature at STC conditions [C]
+    :param reference_irradiance: Reference Irradiance at STC conditions [W/m2]
+    :return: vmp (pd.Series) Voltage at maximum power point
 
     References
     -------
@@ -148,15 +133,15 @@ def fit_imp_king(g_poa_effective: pd.Series,
     """
     Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
-    Parameters
-    ----------
-    goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    temp_cell:  Cell temperature [C].
-    imp: Current at the maximum power point [A]
 
     Returns
     -------
     King imp's parameter inputs: c1, alpha, imp_ref
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param temp_cell:  Cell temperature [C].
+    :param imp: Current at the maximum power point [A]
+
+    :return: King imp's parameter inputs: c1, alpha, imp_ref
     """
 
     # Make sure there is no Nans
@@ -179,15 +164,10 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
     """
     Empirically fit Vmp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
-    Parameters
-    ----------
-    goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    temp_cell:  Cell temperature [C].
-    imp: Voltage at the maximum power point [A]
-
-    Returns
-    -------
-    King vmp's parameter inputs: c2, c3, beta, vmp_ref
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param temp_cell:  Cell temperature [C].
+    :param imp: Voltage at the maximum power point [A]
+    :return: King vmp's parameter inputs: c2, c3, beta, vmp_ref
     """
 
     # Make sure there is no Nans and no irradiation with 0s
@@ -215,18 +195,12 @@ def fit_pvwatt(g_poa_effective: pd.Series,
     """
     Empirically pvwatt model's parameters with brute force method relying on scipy.optimize.curve_fit
 
-    Parameters
-    ----------
-    goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    imp: Voltage at the maximum power point [A]
-    pdc: DC power at maximum power point [W]
-    temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading [C]
-    temp_air: External temperature to use for estimating the cell temperature (if temp_cell not directly provided) [C]
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param pdc: DC power at maximum power point [W]
+    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading [C]
+    :param temp_air: External temperature to use for estimating the cell temperature (if temp_cell not directly provided) [C]
 
-    Returns
-    -------
-    Pvwatt Pdc model's parameter inputs: pdc0, gamma_pdc
-
+    :return: Pvwatt Pdc model's parameter inputs: pdc0, gamma_pdc
     """
     # Get temperature for PV watt model
     temp_cell = get_temp_cell(temp_cell, temp_air, g_poa_effective)
@@ -255,33 +229,29 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
     """
     Draw the IV curve according to DeSoto method and the single Diode model.
 
-    Parameters
-    ----------
-    alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
-    a_ref: The product of the usual diode ideality factor (n, unitless),
+     :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
+     :param a_ref: The product of the usual diode ideality factor (n, unitless),
          number of cells in series (Ns), and cell thermal voltage at reference
          conditions, in units of V.
-    IL: The light-generated current (or photocurrent) at reference conditions, in amperes.
-    I_o_ref: The dark or diode reverse saturation current at reference conditions, in amperes.
-    Rs: The series resistance at reference conditions, in ohms.
-    Rsh: The shunt resistance at reference conditions, in ohms.
-    n_points: Number of points in the desired IV curve
-    effective_irradiance: The irradiance (W/m2) that is converted to photocurrent.
-    temp_cell:  The average cell temperature of cells within a module in C.
-    EgRef: The energy bandgap at reference temperature in units of eV.
+     :param IL: The light-generated current (or photocurrent) at reference conditions, in amperes.
+     :param I_o_ref: The dark or diode reverse saturation current at reference conditions, in amperes.
+     :param Rs: The series resistance at reference conditions, in ohms.
+     :param Rsh: The shunt resistance at reference conditions, in ohms.
+     :param n_points: Number of points in the desired IV curve
+     :param effective_irradiance: The irradiance (W/m2) that is converted to photocurrent.
+     :param temp_cell:  The average cell temperature of cells within a module in C.
+     :param EgRef: The energy bandgap at reference temperature in units of eV.
          1.121 eV for crystalline silicon. EgRef must be >0.  For parameters
          from the SAM CEC module database, EgRef=1.121 is implicit for all
          cell types in the parameter estimation algorithm used by NREL.
-    dEgdT:  The temperature dependence of the energy bandgap at reference
+     :param dEgdT:  The temperature dependence of the energy bandgap at reference
          conditions in units of 1/K. May be either a scalar value
          (e.g. -0.0002677 as in [1]_) or a DataFrame (this may be useful if
          dEgdT is a modeled as a function of temperature). For parameters from
          the SAM CEC module database, dEgdT=-0.0002677 is implicit for all cell
          types in the parameter estimation algorithm used by NREL.
 
-    Returns
-    -------
-    IV curve (pd.DataFrame):
+     :return: IV curve
          * i - IV curve current in amperes.
          * v - IV curve voltage in volts.
 
@@ -316,12 +286,12 @@ def get_Pmpp(iv_curve: pd.DataFrame, VI_max=False, v_col="v", i_col="i"):
     """
     Return the maximum power-point from an IV curve
 
-    Parameters
-    ----------
-    iv_curve: Dataframe with the "i" and "v" points
-    VI_max: also return "Vmpp" and "Impp" at the maximum power point
-    v_col: Voltage column
-    i_col: Current column
+    :param iv_curve: Dataframe with the "i" and "v" points
+    :param VI_max: also return "Vmpp" and "Impp" at the maximum power point
+    :param v_col: Voltage column
+    :param i_col: Current column
+
+    :return: Maximum power point
     """
     p = iv_curve[v_col] * iv_curve[i_col]
     Pmpp = p.max()

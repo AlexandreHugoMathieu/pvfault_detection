@@ -2,7 +2,6 @@ API Reference
 =============
 
 .. autosummary::
-   :toctree: _autosummary
+   :toctree: generated
 
-    lumache
-    pv_models
+    src.pv_models

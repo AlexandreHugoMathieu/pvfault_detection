@@ -11,7 +11,7 @@ from pvlib.pvsystem import pvwatts_dc
 from pvanalytics.features.clipping import threshold
 
 from src.simulate_underperformances import fixed_shading, clipping, bdiode_sc
-from pv_models import fit_pvwatt, fit_vmp_king, vmp_king
+from src.pv_models import fit_pvwatt, fit_vmp_king, vmp_king
 
 
 def shading_detection(pdc: pd.Series,

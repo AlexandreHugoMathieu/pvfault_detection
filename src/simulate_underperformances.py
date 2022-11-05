@@ -8,7 +8,7 @@ from pvlib.solarposition import get_solarposition
 from pvlib.soiling import hsu
 
 from src.data_utils import get_temp_cell
-from pv_models import fit_vmp_king, fit_imp_king, inv_eff_knn, imp_king, vmp_king, vi_curve_singlediode, get_Pmpp
+from src.pv_models import fit_vmp_king, fit_imp_king, inv_eff_knn, imp_king, vmp_king, vi_curve_singlediode, get_Pmpp
 
 
 def scale_system_iv_curve(pv_params: dict,
