@@ -44,6 +44,7 @@ def get_pm_data(start_date="20210101",
                 site: str = "Grenoble Les Frenes",
                 store_pkl: bool = True) -> pd.DataFrame:
     """
+
     Extract airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 and 10 microns from
     data.gouv.
     https://files.data.gouv.fr/lcsqa/concentrations-de-polluants-atmospheriques-reglementes/temps-reel
@@ -51,17 +52,12 @@ def get_pm_data(start_date="20210101",
     Data available only from 2021 for Grenoble.
     Hourly granularity.
 
-    Parameters
-    ----------
-    start_date: date from which to start to extract particule matter concentrations
-    end_date: date to which to stop to extract particule matter concentrations
-    freq: frequency of the recipient (forward fill will be applied if the frequency if finer than an hour)
-    site: which site to extract data for ?
-    store_pkl: Store the data into pickle file ?
-
-    Returns
-    -------
-    Dataframe with Datetime Index containing PM2.5 and PM10 into two columns
+    :param start_date: Fate from which to start to extract particule matter concentrations
+    :param end_date: Fate to which to stop to extract particule matter concentrations
+    :param freq: Frequency of the recipient (forward fill will be applied if the frequency if finer than an hour)
+    :param site: Which site to extract data for
+    :param store_pkl: If true, store the data into pickle file
+    :return: Dataframe with Datetime Index containing PM2.5 and PM10
     """
     dt_range = pd.date_range(start_date, end_date, freq=freq, tz="CET", inclusive="left")
 

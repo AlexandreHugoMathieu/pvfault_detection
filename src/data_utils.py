@@ -11,15 +11,13 @@ def get_temp_cell(temp_cell: pd.Series = None,
     Return directly the temp_cell dataframe or roughly estimate it if not provided thanks to the standard
     pvsyst model from pvlib
 
-    Parameters
-    ----------
-    temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading [C]
-    temp_air: External air temperature to use for estimating the cell temperature (if temp_cell not directly provided) [C]
-    poa_global: Total incident irradiance [W/m2].
+    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading [C]
+    :param temp_air: External air temperature to use for estimating the cell temperature (if temp_cell not directly provided) [C]
+    :param poa_global: Total incident irradiance [W/m2].
 
+    :return Cell temperature [C]
     References
     ----------
-
     pvsyst pvlib, https://pvlib-python.readthedocs.io/en/stable/reference/generated/pvlib.temperature.pvsyst_cell.html
     """
     if temp_cell is None:
