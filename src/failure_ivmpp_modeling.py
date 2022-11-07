@@ -80,6 +80,8 @@ def fixed_shading(poa_global: pd.Series,
     Imp and Vmp are modelled according to King's models and recalculated with the new irradiation that is assumed to
     be poa_diffuse under shading.
 
+    The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
+
     All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
