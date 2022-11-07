@@ -1,6 +1,9 @@
 Usage
 =====
 
+PV models
+---------
+
 .. autofunction:: src.pv_models.inv_eff_knn
 
 .. autofunction:: src.pv_models.imp_teh
@@ -18,3 +21,7 @@ Usage
 .. autofunction:: src.pv_models.vi_curve_singlediode
 
 .. autofunction:: src.pv_models.get_Pmpp
+
+Failure modeling
+----------------
+

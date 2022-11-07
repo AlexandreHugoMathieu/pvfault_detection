@@ -236,7 +236,7 @@ def fit_pvwatt(g_poa_effective: pd.Series,
         pdc = pvwatts_dc(g_poa_effective, temp_cell, pdc0, gamma_pdc, temp_ref=25.0)
         return pdc
 
-    pdc0, gamma_pdc = curve_fit(pvwatt_to_fit, (g_poa_effective_fit, temp_cell_fit), pdc_fit, p0)[0]
+    pdc0, gamma_pdc = curve_fit(pvwatt_to_fit, (g_poa_effective_fit, temp_cell_fit), pdc_fit)[0]
 
     return pdc0, gamma_pdc
 

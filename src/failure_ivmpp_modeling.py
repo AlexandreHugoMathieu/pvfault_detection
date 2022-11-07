@@ -317,6 +317,7 @@ def default_effect_plot(idc: pd.Series = None,
                         pdc_default: pd.Series = None,
                         pac_default: pd.Series = None,
                         title: str = ""):
+    """Plot the operational variables with/without default"""
     idc_bool = (idc is not None) and (idc_default is not None)
     vdc_bool = (vdc is not None) and (vdc_default is not None)
     pdc_bool = (pdc is not None) and (pdc_default is not None)
