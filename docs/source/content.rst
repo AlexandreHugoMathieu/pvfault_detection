@@ -16,7 +16,7 @@ PV models
 
 .. autofunction:: src.pv_models.fit_pvwatt
 
-.. autofunction:: src.pv_models.vi_curve_singlediode
+.. autofunction:: src.pv_models.iv_curve_singlediode
 
 
 Failure modeling
