@@ -1,4 +1,4 @@
-"""This scripts collects simple tools to detect failures"""
+"""Methods to detect and identify pv faults"""
 # Created by A. MATHIEU at 31/10/2022
 import pandas as pd
 import numpy as np
@@ -22,12 +22,15 @@ def shading_detection(pdc: pd.Series,
                       gib_gid_ratio_thresh: float = 0.5,
                       window: str = "31D") -> pd.Series:
     """
-    Flag shading based on DC power and beam/global irradiation.
+    Flag shading based on DC power and diffuse/global irradiation.
 
-    The algorithm assesses  punctual, recurrent relative errors as well as diffuse & total irradiation against thresholds.
-    If the three conditions are met, it flags the datetime as shading.
+    The algorithm assesses  punctual, recurrent relative errors as well as the punctual relative error vs the relative
+    reduction of irradiation if the beam irradiation component is blocked.
+    Those three elements are compared against thresholds and if the three conditions are met, it flags the datetime as
+    shading.
 
-    Note that the algorithm has troubles to detect error on low irradiance.
+    Note that the algorithm has troubles after the Daylight Saving Time and still needs improvement during the
+    shading-transition periods over the day.
 
     :param pdc: DC power [W/m2]
     :param pdc_estimated: Estimated DC power [W/m2]
@@ -36,14 +39,14 @@ def shading_detection(pdc: pd.Series,
     :param poa_diffuse: Incident diffuse irradiation [W/m2]
     :param error_rel_thresh: punctual relative error threshold
     :param error_window_thresh: recurrent relative error threshold
-    :param gib_gid_ratio_thresh: gib/gid threshold to evaluate the error against
+    :param gib_gid_ratio_thresh: gib/gid threshold to evaluate the relative error against
     :param window: number of days to take into account to evaluate the recurrent error
 
     :return: boolean pd.Series with flags when shading is detected
     """
 
     # Prepare recipient
-    error = ((pdc_estimated - pdc) / pdc_s.abs()).clip(lower=-5, upper=5).to_frame("error_rel")
+    error = ((pdc_estimated - pdc) / pdc.abs()).clip(lower=-5, upper=5).to_frame("error_rel")
     error["gib_gid_ratio"] = (poa_global - poa_diffuse) / poa_diffuse
     error["recurrent_error"] = np.nan
     error["shading_flag"] = False
@@ -56,7 +59,7 @@ def shading_detection(pdc: pd.Series,
     # If punctual error, recurrent error and gi/gid ratio conditions are met, flag it as shading
     error["shading_flag"] = (error["error_rel"] > error_rel_thresh) & \
                             (error["recurrent_error"] > error_window_thresh) & \
-                            (error["error_rel"] > error["gib_gi_ratio"] * gib_gid_ratio_thresh)
+                            (error["error_rel"] > error["gib_gid_ratio"] * gib_gid_ratio_thresh)
 
     return error["shading_flag"]
 
@@ -84,7 +87,7 @@ def error_cluster(pdc: pd.Series,
     for col in error_fit.columns:
         error_fit[col] = (error_fit[col] - error_fit[col].mean()) / error_fit[col].std()
 
-    # Fit the model on the whole provided training dataset and predict on the same set
+    # Fit the model on the whole provided training dataset and predict
     mod = KMeans(n_clusters=n_cluster).fit(error_fit)
     error["class"] = pd.Series(mod.predict(error_fit), index=error_fit.index)
 
@@ -96,28 +99,29 @@ def short_circuit_detection(vdc: pd.Series,
                             threshold: float = 20,
                             window: str = "15D"):
     """
-    Detect a mean change in the error indicator.
+    Flag the dates which induce a change in the error pattern between vdc and vdc_estimated.
 
-    For each date, the error indicator is equal to the difference of the means over a time-window before and after
-    the date of the error between the daily-averaged vdc_estimated and vdc.
+    First, the daily error mean is calculated.
+    Then, for each date, the error KPI is equal to the difference of the means over a time-window before and after the
+    date of the daily error.
 
     :param vdc: DC Voltage [V]
     :param vdc_estimated: Estimated DC voltage [V]
     :param threshold: All timestamps for which the indicator goes over the threshold are flagged as short_circuit
-                        detection
     :param window: number of days taken to average the daily error before and after each date
 
     :return: Flag when the Vdc-error indicator is over the threshold + the indicator itself in a pd.Series
     """
-    diff = vdc_estimated.resample("D").mean() - vdc.resample("D").mean()
+    daily_error = (vdc_estimated - vdc).resample("D").mean()
 
-    diff.index = diff.index.date
-    error_kpi = pd.Series(index=diff.index, dtype=float)
-    for date in np.unique(diff.index):
+    daily_error.index = daily_error.index.date
+    error_kpi = pd.Series(index=daily_error.index, dtype=float)
+    for date in np.unique(daily_error.index):
         date_previous = date - pd.Timedelta(window)
         date_after = date + pd.Timedelta(window)
-        error_kpi.loc[date] = diff.loc[(diff.index < date_after) & (diff.index >= date)].mean(skipna=True) - \
-                              diff.loc[(diff.index < date) & (diff.index >= date_previous)].mean(skipna=True)
+        error_kpi.loc[date] = \
+            daily_error.loc[(daily_error.index < date_after) & (daily_error.index >= date)].mean(skipna=True) - \
+            daily_error.loc[(daily_error.index < date) & (daily_error.index >= date_previous)].mean(skipna=True)
 
     flags_sc = (error_kpi > threshold)
 
@@ -136,16 +140,17 @@ if __name__ == '__main__':
     poa_global, poa_diffuse, temp_air = weather["poa_global"], weather["poa_diffuse"], weather["temp_air"]
 
     # Build an Pdc estimate
-    index_fit = pv["Pdc"].dropna().index
-    index_fit = index_fit[(index_fit < '2019-09-01 00:00:00+02:00') & (index_fit > '2019-08-01 00:00:00+02:00')]
-    pdc_fit = pdc.reindex(index_fit)
-    pdc0, gamma_pdc = fit_pvwatt(poa_global, pdc, temp_cell)
+    index_fit = weather[weather["poa_global"] > 400].index
+    index_fit = index_fit[(index_fit > '2019-08-01 00:00:00+02:00') & (index_fit < '2019-09-01 00:00:00+02:00')]
+    index_fit = pv.loc[index_fit, "Pdc"].dropna().index
+    pdc0, gamma_pdc = fit_pvwatt(weather["poa_global"].reindex(index_fit), pdc.reindex(index_fit),
+                                 temp_cell.reindex(index_fit))
     pdc_estimated = pvwatts_dc(poa_global, temp_cell, pdc0, gamma_pdc)
 
     # Shading
     idc_s, vdc_s, pdc_s, pac_s = fixed_shading(poa_global, poa_diffuse, idc, vdc, pac, azimuth, elevation, temp_cell)
     shading_flags = shading_detection(pdc_s, pdc_estimated, poa_global, poa_diffuse, error_rel_thresh=0.1,
-                                      error_window_thresh=0.5, gi_gid_ratio_thresh=0.5)
+                                      error_window_thresh=0.5, gib_gid_ratio_thresh=0.5)
     pdc_s = pdc_s.fillna(pdc_estimated)
     features = pd.concat([azimuth.to_frame("azimuth"), elevation.to_frame("elevation")], axis=1).dropna()
     error = error_cluster(pdc_s, pdc_estimated, features)
@@ -181,7 +186,6 @@ if __name__ == '__main__':
 
     threshold = vdc.median() * 1 / secret.loc["n_module"] * 70 / 100
     flags_sc, df = short_circuit_detection(vdc_sc, vdc_estimated, threshold)
-
     if plot:
         plt.figure()
         vdc_sc.plot()

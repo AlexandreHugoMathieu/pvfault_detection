@@ -27,7 +27,6 @@ def setup_helio_plt(font: dict = {'family': 'Calibri', 'size': 12}) -> None:
     Set up the format of matplotlib plots to Heliocity Format.
 
     :param font: dictionary with font caracteristics
-    :return:
     """
     mpl.rcParams['axes.prop_cycle'] = cycler(color=COLORS)
     mpl.rc('font', **font)

@@ -64,9 +64,9 @@ def imp_king(goa_effective: pd.Series,
     """
     Estimate Imp at the maximum power point according to King's model.
 
-    :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    :param temp_cell:  Cell temperature [C].
-    :param c1: empirically determined coefficient
+    :param goa_effective: Irradiance reaching the module's cells, after reflections and adjustment for spectrum. [W/m2]
+    :param temp_cell: Cell temperature [C].
+    :param c1: Empirically determined coefficient
     :param alpha: Maximum power current temperature coefficient at reference condition (1/C)
     :param imp_ref: Power current reference [A]
     :param reference_temperature:  Reference temperature at STC conditions [C]
@@ -97,8 +97,8 @@ def vmp_king(goa_effective: pd.Series,
 
     :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
-    :param c2: empirically determined coefficient
-    :param c3: empirically determined coefficient
+    :param c2: Empirically determined coefficient
+    :param c3: Empirically determined coefficient
     :param beta: Open circuit voltage temperature coefficient at reference condition (V/C)
     :param vmp_ref: Power voltage reference [V]
     :param reference_temperature:  Reference temperature at STC conditions [C]
@@ -126,11 +126,11 @@ def fit_imp_king(g_poa_effective: pd.Series,
                  temp_cell: pd.Series,
                  imp: pd.Series):
     """
-    Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
-    King imp's parameter inputs: c1, alpha, imp_ref
+    Fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
+
 
     :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
-    :param temp_cell:  Cell temperature [C].
+    :param temp_cell: Cell temperature [C].
     :param imp: Current at the maximum power point [A]
 
     :return: King imp's parameter inputs: c1, alpha, imp_ref
@@ -160,7 +160,7 @@ def fit_imp_king(g_poa_effective: pd.Series,
 
 def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Series):
     """
-    Empirically fit Vmp King model's parameters with brute force method relying on scipy.optimize.curve_fit
+    Fit Vmp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
     :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
@@ -193,8 +193,7 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
 
 def fit_imp_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, imp: pd.Series, vmp: pd.Series):
     """
-    Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
-    King imp's parameter inputs: c1, alpha, imp_ref
+    Fit Imp and Vmp King model's parameters with brute force method relying on scipy.optimize.curve_fit
 
     :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
@@ -216,7 +215,7 @@ def fit_pvwatt(g_poa_effective: pd.Series,
                pdc: pd.Series,
                temp_cell: pd.Series = None):
     """
-    Empirically pvwatt model's parameters with brute force method relying on scipy.optimize.curve_fit
+    Fit pvwatt model's parameters with brute force method relying on scipy.optimize.curve_fit
 
     :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param pdc: DC power at maximum power point [W]
@@ -250,19 +249,12 @@ def iv_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
 
     More info here: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
 
-    Calculating a module IV curve for certain operating conditions is a two-step process.
-    Multiple methods exist for both parts of the process. Here we use the De Soto model 1 to calculate the electrical
-    parameters for an IV curve at a certain irradiance and temperature using the module’s base characteristics at
-    reference conditions. Those parameters are then used to calculate the module’s IV curve by solving the
-    single-diode equation using the Lambert W method.
-
     :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
     :param a_ref: The product of the usual diode ideality factor (n, unitless),
          number of cells in series (Ns), and cell thermal voltage at reference
          conditions, in units of V.
     :param I_L_ref: The light-generated current (or photocurrent) at reference conditions, in amperes.
     :param I_o_ref: The dark or diode reverse saturation current at reference conditions, in amperes.
-
     :param R_sh_ref: The shunt resistance at reference conditions, in ohms.
     :param R_s: The series resistance at reference conditions, in ohms.
     :param n_points: Number of points in the desired IV curve
@@ -285,13 +277,13 @@ def iv_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
 
     References
     ----------
-    Strongly deducted from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+    Strongly inspired/rewritten from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
 
     W. De Soto et al., “Improvement and validation of a model for photovoltaic array performance”,
     Solar Energy, vol 80, pp. 78-88, 2006.
 
     """
-    # adjust the reference parameters according to the operating conditions (effective_irradiance, temp_cell)
+    # Adjust the reference parameters according to the operating conditions (effective_irradiance, temp_cell)
     # using the De Soto model:
     IL, I0, Rs, Rsh, nNsVth = calcparams_desoto(effective_irradiance, temp_cell,
                                                 alpha_sc, a_ref, I_L_ref, I_o_ref, R_sh_ref, R_s,

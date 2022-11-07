@@ -1,9 +1,10 @@
-"""This script provides tools to simulate failures on operational variables such as Idc, Vdc, Pac"""
-
+"""Tools to simulate failures on operational variables such as Idc, Vdc, Pac"""
 # Created by A. MATHIEU at 31/10/2022
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from typing import Union
+from datetime import datetime
 from tqdm import tqdm
 from pvlib.soiling import hsu
 
@@ -90,7 +91,7 @@ def fixed_shading(poa_global: pd.Series,
     :param shade_azi_max: Maximum shade azimuth of the rectangular shape [°]
     :param shade_alt: Maximum shade elevation of the rectangular shape [°]
 
-    :return: Operational variables including shading effect
+    :return: Operational variables with shading effect
     """
     # Boolean condition to indicate if there is shading or not
     shading_bool = shading_cond(azimuth, elevation, shade_azi_min, shade_azi_max, shade_alt)
@@ -128,7 +129,7 @@ def clipping(poa_global: pd.Series,
              pac_max: float,
              pv_params: dict):
     """
-    Simulate inverter clipping according to an AC power limit on operational current and voltage.
+    Simulate inverter clipping according to an AC power limit on operational variables.
 
     All Series should have the same Datetime Index.
 
@@ -141,7 +142,7 @@ def clipping(poa_global: pd.Series,
     :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
                     pvlib.pvsystem.retrieve_sam("CECmod")
 
-    :return: Operational variables including clipping effect
+    :return: Operational variables with clipping effect
     """
     # Prepare recipients
     idc_clipping = idc.copy()
@@ -187,20 +188,26 @@ def soiling_effect(poa_global: pd.Series,
 
     It assumes soiling is uniform over the system and follows the hsu model from pvlib.
 
+    All Series should have the same Datetime Index.
+
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param idc: DC current [A]
     :param vdc: DC Voltage [V]
     :param pac: AC power [W]
-    :param rainfall: Rain accumulated in each time period. [mm]
+    :param rainfall: Rain accumulated in each time period defined by "rain_accum_period". [mm]
     :param pm2_5: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 microns. [g/m^3]
     :param pm10: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 10 microns. [g/m^3]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading.
+    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under soiling.
     :param tilt: Tilt of the PV panels from horizontal. [degree]
-    :param depo_veloc:  Deposition or settling velocity of particulates. [m/s]
+    :param depo_veloc:  Deposition or settling velocity of particulates. [m/s] (default values from pvlib hsu)
     :param cleaning_threshold: Amount of rain in an accumulation period needed to clean the PV modules. [mm]
     :param rain_accum_period: Period for accumulating rainfall to check against cleaning_threshold
 
-    :return: Operational variables including soiling effect
+    :return: Operational variables with soiling effect
+
+    References
+    ----------
+    HSU model from pvlib: https://pvlib-python.readthedocs.io/en/v0.9.0/generated/pvlib.soiling.hsu.html#pvlib.soiling.hsu
     """
 
     # Compute soiling ratio according to the HSU model (pvlib) and assumes it uniformly applies on the irradiance
@@ -234,25 +241,27 @@ def bdiode_sc(poa_global: pd.Series,
               vdc: pd.Series,
               pac: pd.Series,
               temp_cell: pd.Series,
-              sc_date: pd.Timestamp,
+              sc_date: Union[pd.Timestamp, datetime],
               pv_params: dict,
               n_mod: float,
-              ndiode: float = 1,
-              n_cell_string: float = 3):
+              n_diode: float = 1,
+              n_diode_mod: float = 3):
     """
-    Simulate the short circuit of some bypass diodes.
+    Simulate the short circuit of some bypass diodes on a PV string.
+
+    All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param idc: DC current [A]
     :param vdc: DC Voltage [V]
     :param pac: AC power [W]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading
+    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations with short-circuit
     :param sc_date: Date of the bypass short circuit
     :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
                 pvlib.pvsystem.retrieve_sam("CECmod")
     :param n_mod: Number of modules in the string
-    :param ndiode: Number of short-circuited diode bypasses
-    :param n_cell_string: Number of cell strings in a module
+    :param n_diode: Number of short-circuited diode bypasses
+    :param n_diode_mod: Number of bypass diodes in a module
 
     :return: DataFrames of Idc, Vdc, Pdc and Pac with bybass short circuit effect
     """
@@ -269,11 +278,11 @@ def bdiode_sc(poa_global: pd.Series,
     for idx in tqdm(index, desc="Bypass short-circuiting"):
         vi_curve = scale_system_iv_curve(pv_params, vdc.loc[idx], idc.loc[idx], poa_global.loc[idx], temp_cell.loc[idx])
 
-        # Assume each module and each cell-string of each module has the same contribution + assume that the short
-        # circuit of a bypass diode induces a drop in V proportional to the ratio of 1 cell-string to the total number
-        # of cell-strings
-        n_string = n_mod * n_cell_string
-        vi_curve["v_system"] = vi_curve["v_system"] * (n_string - ndiode) / n_string
+        # Assume each cell-string connected to a bypass diode has equally the same voltage contribution in the PV string
+        # Then, the short-circuit of a bypass diode induces a drop in V that is equal to its proportion against the
+        # total number of diodes
+        n_tot_diode = n_mod * n_diode_mod
+        vi_curve["v_system"] = vi_curve["v_system"] * (n_tot_diode - n_diode) / n_tot_diode
         pdc_bypass_sc.loc[idx], idc_bypass_sc.loc[idx], vdc_bypass_sc.loc[idx] = \
             get_Pmpp(vi_curve, VI_max=True, v_col="v_system", i_col="i_system")
 
@@ -384,10 +393,10 @@ if __name__ == '__main__':
 
     # Bypass short circuit
     pv_params = retrieve_sam('cecmod')[secret.loc["panel_name"]]  # panel in the field
-    sc_date = pd.Timestamp("20190901").tz_localize("CET")
+    sc_date = pd.to_datetime("20190901").tz_localize("CET")
     idc_sc, vdc_sc, pdc_sc, pac_sc = \
         bdiode_sc(poa_global, idc, vdc, pac, temp_cell, sc_date, pv_params, n_mod=secret.loc["n_module"],
-                  ndiode=secret.loc["n_diode"])
+                  n_diode=secret.loc["n_diode"])
 
     if plot:
         _ = default_effect_plot(idc, vdc, pdc, pac, idc_s, vdc_s, pdc_s, pac_s, "Shading")
@@ -420,7 +429,7 @@ if __name__ == '__main__':
         idc_c, vdc_c, pdc_c, pac_c = clipping(poa_global, idc_s, vdc_s, pac_s, temp_cell, pac_max=42000,
                                               pv_params=pv_params)
         # short circuit
-        sc_date = pd.Timestamp("20190901").tz_localize("CET")
+        sc_date = pd.to_datetime("20190901").tz_localize("CET")
         idc_all, vdc_all, pdc_all, pac_all = bdiode_sc(poa_global, idc_c, vdc_c, pac_c, temp_cell, sc_date, pv_params,
                                                        n_mod=secret.loc["n_module"], ndiode=secret.loc["n_diode"])
 
