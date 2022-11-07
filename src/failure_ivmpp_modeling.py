@@ -192,11 +192,11 @@ def soiling_effect(poa_global: pd.Series,
     :param rainfall: Rain accumulated in each time period. [mm]
     :param pm2_5: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 microns. [g/m^3]
     :param pm10: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 10 microns. [g/m^3]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading
+    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading.
     :param tilt: Tilt of the PV panels from horizontal. [degree]
     :param depo_veloc:  Deposition or settling velocity of particulates. [m/s]
     :param cleaning_threshold: Amount of rain in an accumulation period needed to clean the PV modules. [mm]
-    :param rain_accum_period: Period for accumulating rainfall to check against `cleaning_threshold
+    :param rain_accum_period: Period for accumulating rainfall to check against cleaning_threshold
 
     :return: Operational variables including soiling effect
     """
