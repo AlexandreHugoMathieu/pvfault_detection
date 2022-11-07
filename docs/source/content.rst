@@ -22,20 +22,20 @@ PV models
 Failure modeling
 ----------------
 
-.. autofunction:: src.pv_models.fixed_shading
+.. autofunction:: src.failure_ivmpp_modelling.fixed_shading
 
-.. autofunction:: src.pv_models.clipping
+.. autofunction:: src.failure_ivmpp_modelling.clipping
 
-.. autofunction:: src.pv_models.soiling_effect
+.. autofunction:: src.failure_ivmpp_modelling.soiling_effect
 
-.. autofunction:: src.pv_models.bdiode_sc
+.. autofunction:: src.failure_ivmpp_modelling.bdiode_sc
 
 
 PV fault detection
 ------------------
 
-.. autofunction:: src.pv_models.shading_detection
+.. autofunction:: src.fault_detection.shading_detection
 
-.. autofunction:: src.pv_models.error_cluster
+.. autofunction:: src.fault_detection.error_cluster
 
-.. autofunction:: src.pv_models.short_circuit_detection
+.. autofunction:: src.fault_detection.short_circuit_detection
