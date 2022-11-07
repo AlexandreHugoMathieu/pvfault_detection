@@ -10,7 +10,7 @@ from pvlib.pvsystem import pvwatts_dc
 
 from pvanalytics.features.clipping import threshold
 
-from src.simulate_underperformances import fixed_shading, clipping, bdiode_sc
+from src.failure_ivmpp_modeling import fixed_shading, clipping, bdiode_sc
 from src.pv_models import fit_pvwatt, fit_vmp_king, vmp_king
 
 

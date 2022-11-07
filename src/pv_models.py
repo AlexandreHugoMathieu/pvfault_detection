@@ -8,8 +8,6 @@ from scipy.optimize import curve_fit
 from sklearn.neighbors import KNeighborsRegressor
 from pvlib.pvsystem import calcparams_desoto, singlediode, pvwatts_dc
 
-from src.data_utils import get_temp_cell
-
 
 def inv_eff_knn(pdc_fit: pd.Series, pac_fit: pd.Series, pdc: pd.Series, n_neighbors: int = 100) -> pd.Series:
     """
@@ -112,9 +110,10 @@ def vmp_king(goa_effective: pd.Series,
     ----------
     King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
     """
-    Ee = goa_effective / reference_irradiance
+    Ee = pd.Series(goa_effective / reference_irradiance).replace(0, np.nan)
 
     temp_cell_K = temp_cell + 273.15
+
     vmp = vmp_ref + \
           c2 * temp_cell_K * np.log(Ee) + \
           c3 * (temp_cell_K * np.log(Ee)) ** 2 + \
@@ -135,6 +134,11 @@ def fit_imp_king(g_poa_effective: pd.Series,
     :param imp: Current at the maximum power point [A]
 
     :return: King imp's parameter inputs: c1, alpha, imp_ref
+
+    References
+    ----------
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
+
     """
 
     # Make sure there is no Nans
@@ -163,6 +167,10 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
     :param vmp: Voltage at the maximum power point [A]
 
     :return: King vmp's parameter inputs: c2, c3, beta, vmp_ref
+
+    References
+    ----------
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
     """
 
     # Make sure there is no Nans and no irradiation with 0s
@@ -183,23 +191,39 @@ def fit_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, vmp: pd.Serie
     return (c2, c3, beta, vmp_ref)
 
 
+def fit_imp_vmp_king(g_poa_effective: pd.Series, temp_cell: pd.Series, imp: pd.Series, vmp: pd.Series):
+    """
+    Empirically fit Imp King model's parameters with brute force method relying on scipy.optimize.curve_fit
+    King imp's parameter inputs: c1, alpha, imp_ref
+
+    :param g_poa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
+    :param temp_cell:  Cell temperature [C].
+    :param imp: Current at the maximum power point [A]
+    :param vmp: Voltage at the maximum power point [A]
+
+    :return: King imp's and vmp's parameter inputs: c1, alpha, imp_ref, c2, c3, beta, vmp_ref
+
+    References
+    ----------
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
+    """
+    (c1, alpha, imp_ref) = fit_imp_king(g_poa_effective, temp_cell, imp)
+    (c2, c3, beta, vmp_ref) = fit_vmp_king(g_poa_effective, temp_cell, vmp)
+    return (c1, alpha, imp_ref, c2, c3, beta, vmp_ref)
+
+
 def fit_pvwatt(g_poa_effective: pd.Series,
                pdc: pd.Series,
-               temp_cell: pd.Series = None,
-               temp_air: pd.Series = None):
+               temp_cell: pd.Series = None):
     """
     Empirically pvwatt model's parameters with brute force method relying on scipy.optimize.curve_fit
 
     :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param pdc: DC power at maximum power point [W]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under shading [C]
-    :param temp_air: External temperature to use for estimating the cell temperature (if temp_cell not directly provided) [C]
+    :param temp_cell: Cell temperature [C]
 
     :return: Pvwatt Pdc model's parameter inputs: pdc0, gamma_pdc
     """
-    # Get temperature for PV watt model
-    temp_cell = get_temp_cell(temp_cell, temp_air, g_poa_effective)
-
     # Make sure there is no Nans and no irradiation with 0s
     index_fit = pdc.dropna().index.intersection(g_poa_effective.dropna().index).intersection(temp_cell.dropna().index)
     index_fit = g_poa_effective.reindex(index_fit)[g_poa_effective.reindex(index_fit) != 0].index
@@ -217,12 +241,20 @@ def fit_pvwatt(g_poa_effective: pd.Series,
     return pdc0, gamma_pdc
 
 
-def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref: float, R_sh_ref: float, R_s: float,
+def iv_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref: float, R_sh_ref: float, R_s: float,
                          n_points: float = 1000, effective_irradiance: float = 1000, temp_cell: float = 25,
                          EgRef: float = 1.121,
                          dEgdT: float = -0.0002677) -> pd.DataFrame:
     """
     Draw the IV curve according to DeSoto method and the single Diode model.
+
+    More info here: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+
+    Calculating a module IV curve for certain operating conditions is a two-step process.
+    Multiple methods exist for both parts of the process. Here we use the De Soto model 1 to calculate the electrical
+    parameters for an IV curve at a certain irradiance and temperature using the module’s base characteristics at
+    reference conditions. Those parameters are then used to calculate the module’s IV curve by solving the
+    single-diode equation using the Lambert W method.
 
     :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
     :param a_ref: The product of the usual diode ideality factor (n, unitless),
@@ -253,7 +285,10 @@ def vi_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
 
     References
     ----------
-    Strongly inspired/taken from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+    Strongly deducted from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+
+    W. De Soto et al., “Improvement and validation of a model for photovoltaic array performance”,
+    Solar Energy, vol 80, pp. 78-88, 2006.
 
     """
     # adjust the reference parameters according to the operating conditions (effective_irradiance, temp_cell)
@@ -318,7 +353,7 @@ if __name__ == '__main__':
     from src.utils.helio_fmt import setup_helio_plt
 
     pv_params = pvlib.pvsystem.retrieve_sam('cecmod')['Hanwha_Q_CELLS_Q_PEAK_DUO_G5_SC_325']
-    vi_curve = vi_curve_singlediode(pv_params["alpha_sc"], pv_params["a_ref"], pv_params["I_L_ref"],
+    vi_curve = iv_curve_singlediode(pv_params["alpha_sc"], pv_params["a_ref"], pv_params["I_L_ref"],
                                     pv_params["I_o_ref"], pv_params["R_sh_ref"], pv_params["R_s"])
 
     setup_helio_plt()

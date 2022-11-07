@@ -5,6 +5,8 @@ import pickle
 import os
 
 from tqdm import tqdm
+from pvlib.solarposition import get_solarposition
+from pvlib.temperature import pvsyst_cell
 
 from src.config import ROOT
 
@@ -22,7 +24,7 @@ def load_sample_data():
     weather_data["temp_air"] = weather_data["temp_air"] - 273.15
     weather_data.index = pd.to_datetime(weather_data.index)
 
-    # Get ppm data
+    # Get ppm data from Grenoble as example
     pm = get_pm_data("20210801", "20211101", freq=freq).tz_convert("UTC")
     pm.index = (pm.index - pd.DateOffset(years=2)).tz_convert("CET")
     weather_data["pm_2_5_g.m3"] = pm["pm_2_5_g.m3"]
@@ -35,7 +37,21 @@ def load_sample_data():
     pv_data.index = pd.to_datetime(pv_data.index)
     pv_data = pv_data.reindex(index)
 
-    return weather_data, pv_data
+    # Secret file
+    secret = pd.read_csv(ROOT / "data" / "secret.csv", header=None, index_col=0)[1]
+    secret.loc[["latitude", "longitude", "tilt", "n_module", "n_diode"]] = \
+        secret.loc[["latitude", "longitude", "tilt", "n_module", "n_diode"]].astype(float)
+
+    # Get the sun's path azimuth and elevation
+    latitude, longitude = float(secret.loc["latitude"]), float(secret.loc["longitude"])
+    solar_pos = get_solarposition(index, latitude, longitude)
+    azimuth = solar_pos["azimuth"]
+    elevation = solar_pos["elevation"]  # or apparent_elevation ?
+
+    # Roughly estimate the cell temperature
+    temp_cell = pvsyst_cell(weather_data["poa_global"], weather_data["temp_air"], weather_data["wind_speed"])
+
+    return weather_data, pv_data, azimuth, elevation, temp_cell, secret
 
 
 def get_pm_data(start_date="20210101",
@@ -100,4 +116,4 @@ def get_pm_data(start_date="20210101",
 
 
 if __name__ == '__main__':
-    weather_data, pv_data = load_sample_data()
+    weather_data, pv_data, azimuth, elevation, temp_cell, secret = load_sample_data()
