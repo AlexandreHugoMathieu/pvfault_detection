@@ -77,6 +77,9 @@ def fixed_shading(poa_global: pd.Series,
 
     Assume the shading is covering the whole installation (no partial shading)
 
+    Imp and Vmp are modelled according to King's models and recalculated with the new irradiation that is assumed to
+    be poa_diffuse under shading.
+
     All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
@@ -92,6 +95,11 @@ def fixed_shading(poa_global: pd.Series,
     :param shade_alt: Maximum shade elevation of the rectangular shape [°]
 
     :return: Operational variables with shading effect
+
+    References
+    ----------
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
+
     """
     # Boolean condition to indicate if there is shading or not
     shading_bool = shading_cond(azimuth, elevation, shade_azi_min, shade_azi_max, shade_alt)
@@ -131,6 +139,9 @@ def clipping(poa_global: pd.Series,
     """
     Simulate inverter clipping according to an AC power limit on operational variables.
 
+    For each datapoint affected by clipping, the IV curve is redrawn thanks to the single diode model and the
+    new maximum power point is obtained by increasing Vmpp until we fall under Pac < pac_max.
+
     All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
@@ -143,6 +154,13 @@ def clipping(poa_global: pd.Series,
                     pvlib.pvsystem.retrieve_sam("CECmod")
 
     :return: Operational variables with clipping effect
+
+    References
+    ----------
+    Single diode model, inspired from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+
+    W. De Soto et al., “Improvement and validation of a model for photovoltaic array performance”,
+    Solar Energy, vol 80, pp. 78-88, 2006.
     """
     # Prepare recipients
     idc_clipping = idc.copy()
@@ -188,6 +206,10 @@ def soiling_effect(poa_global: pd.Series,
 
     It assumes soiling is uniform over the system and follows the hsu model from pvlib.
 
+    Imp and Vmp are modelled according to King's models and recalculated with the new irradiation reduced with soiling.
+
+    The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
+
     All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
@@ -208,6 +230,9 @@ def soiling_effect(poa_global: pd.Series,
     References
     ----------
     HSU model from pvlib: https://pvlib-python.readthedocs.io/en/v0.9.0/generated/pvlib.soiling.hsu.html#pvlib.soiling.hsu
+
+    King, D. et al, 2004, "Sandia Photovoltaic Array Performance Model", SAND Report 3535, Sandia National Laboratories, Albuquerque,NM.
+
     """
 
     # Compute soiling ratio according to the HSU model (pvlib) and assumes it uniformly applies on the irradiance
@@ -249,6 +274,11 @@ def bdiode_sc(poa_global: pd.Series,
     """
     Simulate the short circuit of some bypass diodes on a PV string.
 
+    For each datapoint after the short-circuit date, the IV curve is redrawn thanks to the single diode model and the
+    new maximum power point is obtained by subtracting the diode voltage to the curve.
+
+    The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
+
     All Series should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
@@ -264,6 +294,13 @@ def bdiode_sc(poa_global: pd.Series,
     :param n_diode_mod: Number of bypass diodes in a module
 
     :return: DataFrames of Idc, Vdc, Pdc and Pac with bybass short circuit effect
+
+    References
+    ----------
+    Single diode model, inspired from: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
+
+    W. De Soto et al., “Improvement and validation of a model for photovoltaic array performance”,
+    Solar Energy, vol 80, pp. 78-88, 2006.
     """
 
     # Prepare recipients
