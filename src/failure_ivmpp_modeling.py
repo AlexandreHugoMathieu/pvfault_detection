@@ -1,3 +1,5 @@
+"""This script provides tools to simulate failures on operational variables such as Idc, Vdc, Pac"""
+
 # Created by A. MATHIEU at 31/10/2022
 import pandas as pd
 import matplotlib.pyplot as plt

@@ -1,3 +1,4 @@
+"""This scripts collects simple tools to detect failures"""
 # Created by A. MATHIEU at 31/10/2022
 import pandas as pd
 import numpy as np
@@ -18,28 +19,32 @@ def shading_detection(pdc: pd.Series,
                       poa_diffuse: pd.Series,
                       error_rel_thresh: float = 0,
                       error_window_thresh: float = 0.5,
-                      gi_gid_ratio_thresh: float = 0.5,
+                      gib_gid_ratio_thresh: float = 0.5,
                       window: str = "31D") -> pd.Series:
     """
-    Flag shading datetimes based on DC power and diffuse/global irradiation.
+    Flag shading based on DC power and beam/global irradiation.
 
-    The algorith assesses  punctual, recurrent relative errors as well as diffuse/total irradiation against thresholds.
+    The algorithm assesses  punctual, recurrent relative errors as well as diffuse & total irradiation against thresholds.
     If the three conditions are met, it flags the datetime as shading.
 
-    The algorithm has troubles to detect error on low irradiance.
+    Note that the algorithm has troubles to detect error on low irradiance.
 
     :param pdc: DC power [W/m2]
     :param pdc_estimated: Estimated DC power [W/m2]
     :param window: number of days to evaluate the recurrent pattern on the relative errr (centered-window)
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param poa_diffuse: Incident diffuse irradiation [W/m2]
+    :param error_rel_thresh: punctual relative error threshold
+    :param error_window_thresh: recurrent relative error threshold
+    :param gib_gid_ratio_thresh: gib/gid threshold to evaluate the error against
+    :param window: number of days to take into account to evaluate the recurrent error
 
     :return: boolean pd.Series with flags when shading is detected
     """
 
     # Prepare recipient
     error = ((pdc_estimated - pdc) / pdc_s.abs()).clip(lower=-5, upper=5).to_frame("error_rel")
-    error["gib_gi_ratio"] = (poa_global - poa_diffuse) / poa_diffuse
+    error["gib_gid_ratio"] = (poa_global - poa_diffuse) / poa_diffuse
     error["recurrent_error"] = np.nan
     error["shading_flag"] = False
 
@@ -51,7 +56,7 @@ def shading_detection(pdc: pd.Series,
     # If punctual error, recurrent error and gi/gid ratio conditions are met, flag it as shading
     error["shading_flag"] = (error["error_rel"] > error_rel_thresh) & \
                             (error["recurrent_error"] > error_window_thresh) & \
-                            (error["error_rel"] > error["gib_gi_ratio"] * gi_gid_ratio_thresh)
+                            (error["error_rel"] > error["gib_gi_ratio"] * gib_gid_ratio_thresh)
 
     return error["shading_flag"]
 
@@ -61,11 +66,11 @@ def error_cluster(pdc: pd.Series,
                   features: pd.DataFrame,
                   n_cluster=2) -> pd.DataFrame:
     """
-    Return KNN-Cluster based on azimuth, elevation and error
+    Return KNN-Cluster based on features and relative error
 
-    :param pdc: Real DC power timeserie (including shading)
-    :param pdc_estimated: Estiamted DC power timeseries (without shading)
-    :param features: features of the dataset to train the Knn model on
+    :param pdc: Real DC power timeserie (including shading for example)
+    :param pdc_estimated: Estimated DC power timeseries (without shading for example)
+    :param features: Features of the dataset to train the KNN model on
     :param n_cluster: Number of cluster to return
 
     :return: pd.Dataframe with cluster number in  "class" column
@@ -93,8 +98,8 @@ def short_circuit_detection(vdc: pd.Series,
     """
     Detect a mean change in the error indicator.
 
-    For each date, the error indicator is equal to the difference between the daily-averaged vdc_estimated and vdc over
-     a time-window before and after the date.
+    For each date, the error indicator is equal to the difference of the means over a time-window before and after
+    the date of the error between the daily-averaged vdc_estimated and vdc.
 
     :param vdc: DC Voltage [V]
     :param vdc_estimated: Estimated DC voltage [V]
@@ -102,7 +107,7 @@ def short_circuit_detection(vdc: pd.Series,
                         detection
     :param window: number of days taken to average the daily error before and after each date
 
-    :return: Flag when the Vdc-error indicator is over the threshold and the indicator itself
+    :return: Flag when the Vdc-error indicator is over the threshold + the indicator itself in a pd.Series
     """
     diff = vdc_estimated.resample("D").mean() - vdc.resample("D").mean()
 
