@@ -82,7 +82,7 @@ def fixed_shading(poa_global: pd.Series,
 
     The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
 
-    All Series should have the same Datetime Index.
+    All inputs should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param poa_diffuse: Incident diffuse irradiation [W/m2]
@@ -144,7 +144,7 @@ def clipping(poa_global: pd.Series,
     For each datapoint affected by clipping, the IV curve is redrawn thanks to the single diode model and the
     new maximum power point is obtained by increasing Vmpp until we fall under Pac < pac_max.
 
-    All Series should have the same Datetime Index.
+    All inputs should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param idc: DC current [A]
@@ -204,7 +204,7 @@ def soiling_effect(poa_global: pd.Series,
                    cleaning_threshold=10,
                    rain_accum_period: pd.Timedelta = pd.Timedelta('24h')):
     """
-    Simulate soiling on operational current and voltage.
+    Simulate soiling on operational variables.
 
     It assumes soiling is uniform over the system and follows the hsu model from pvlib.
 
@@ -212,7 +212,7 @@ def soiling_effect(poa_global: pd.Series,
 
     The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
 
-    All Series should have the same Datetime Index.
+    All inputs should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param idc: DC current [A]
@@ -274,14 +274,14 @@ def bdiode_sc(poa_global: pd.Series,
               n_diode: float = 1,
               n_diode_mod: float = 3):
     """
-    Simulate the short circuit of some bypass diodes on a PV string.
+    Simulate the short circuit of some bypass diodes on PV string operational variables.
 
     For each datapoint after the short-circuit date, the IV curve is redrawn thanks to the single diode model and the
     new maximum power point is obtained by subtracting the diode voltage to the curve.
 
     The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
 
-    All Series should have the same Datetime Index.
+    All inputs should have the same Datetime Index.
 
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param idc: DC current [A]
