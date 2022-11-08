@@ -11,12 +11,12 @@ The repository is broadly inspired from pvlib and pvanalytics.
 - pvlib: https://pvlib-python.readthedocs.io/en/stable/
 - pvanalytics: https://pvanalytics.readthedocs.io/en/stable/
 
-I sincerely thank those developpers who offer the possibilities to other researchers to build from the top-edge methods.
+I sincerely thank those developers who offer the possibilities to other researchers to build from the top-edge methods.
 
 This project:
 - Simulates defaults: fixed shading, bypass diode short circuit, soiling and inverter clipping
 - Includes detection methods to detect those defaults
-- Implements and allows to emprically fit a range of pv model such as the PAPM from King: King, D & Kratochvil, J & Boyson, W. (2004). Photovoltaic Array Performance Model. 8. 10.2172/919131.
+- Implements and allows to fit a range of pv model such as the PAPM from King: King, D & Kratochvil, J & Boyson, W. (2004). Photovoltaic Array Performance Model. 8. 10.2172/919131.
 
 ## Setup
 
