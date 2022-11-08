@@ -25,16 +25,16 @@ def shading_detection(pdc: pd.Series,
     Flag shading based on DC power and diffuse/global irradiation.
 
     The algorithm assesses  punctual, recurrent relative errors as well as the punctual relative error vs the relative
-    reduction of irradiation if the beam irradiation component is blocked.
+    reduction of irradiation if the beam irradiation component is blocked due to shading.
     Those three elements are compared against thresholds and if the three conditions are met, it flags the datetime as
     shading.
 
-    Note that the algorithm has troubles after the Daylight Saving Time and still needs improvement during the
+    Note that the algorithm has troubles after the Daylight Saving Time and still needs improvement during
     shading-transition periods over the day.
 
-    :param pdc: DC power [W/m2]
-    :param pdc_estimated: Estimated DC power [W/m2]
-    :param window: number of days to evaluate the recurrent pattern on the relative errr (centered-window)
+    :param pdc: DC power [W/m2] (including shading for example)
+    :param pdc_estimated: Estimated DC power [W/m2]  (without shading)
+    :param window: number of days to evaluate the recurrent pattern on the relative error (centered-window)
     :param poa_global: Incident (effective) irradiation [W/m2]
     :param poa_diffuse: Incident diffuse irradiation [W/m2]
     :param error_rel_thresh: punctual relative error threshold
@@ -56,7 +56,7 @@ def shading_detection(pdc: pd.Series,
     error["recurrent_error"] = error[["error_rel", "time"]].groupby("time").transform(
         lambda x: x.rolling(window, center=True).mean(min_count=1))
 
-    # If punctual error, recurrent error and gi/gid ratio conditions are met, flag it as shading
+    # If punctual error, recurrent error and gib/gid ratio conditions are met, flag it as shading
     error["shading_flag"] = (error["error_rel"] > error_rel_thresh) & \
                             (error["recurrent_error"] > error_window_thresh) & \
                             (error["error_rel"] > error["gib_gid_ratio"] * gib_gid_ratio_thresh)
@@ -102,15 +102,15 @@ def short_circuit_detection(vdc: pd.Series,
     Flag the dates which induce a change in the error pattern between vdc and vdc_estimated.
 
     First, the daily error mean is calculated.
-    Then, for each date, the error KPI is equal to the difference of the means over a time-window before and after the
-    date of the daily error.
+    Then, for each date, the error KPI is equal to the difference of the daily error means over a time-window before and
+    after the date.
 
-    :param vdc: DC Voltage [V]
-    :param vdc_estimated: Estimated DC voltage [V]
+    :param vdc: DC Voltage [V] (including a short circuit)
+    :param vdc_estimated: Estimated DC voltage [V]  (without short-circuit)
     :param threshold: All timestamps for which the indicator goes over the threshold are flagged as short_circuit
     :param window: number of days taken to average the daily error before and after each date
 
-    :return: Flag when the Vdc-error indicator is over the threshold + the indicator itself in a pd.Series
+    :return: Flag when the Vdc-error KPI is over the threshold + the indicator itself in a pd.Series
     """
     daily_error = (vdc_estimated - vdc).resample("D").mean()
 

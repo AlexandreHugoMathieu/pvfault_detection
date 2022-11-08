@@ -64,6 +64,14 @@ def imp_king(goa_effective: pd.Series,
     """
     Estimate Imp at the maximum power point according to King's model.
 
+    The equation is slightly tweaked from the publication to remove the dependency on :math:`I_0`:
+
+    .. math::
+
+        I_{mpp} = Imp_{ref} (Ee + c1 * Ee^2) ( 1 + alpha (T_{cell} - T_{ref}))
+
+    where :math:`Ee` is the effective irradiance and :math:`T_{cell}` the cell temperature.
+
     :param goa_effective: Irradiance reaching the module's cells, after reflections and adjustment for spectrum. [W/m2]
     :param temp_cell: Cell temperature [C].
     :param c1: Empirically determined coefficient
@@ -94,6 +102,15 @@ def vmp_king(goa_effective: pd.Series,
              reference_irradiance: float = 1000):
     """
     Estimate Vmp at the maximum power point according to King's model.
+
+    The equation is slightly tweaked from the publication to remove the dependency on :math:`V_0`:
+
+    .. math::
+
+        V_{mpp} = Vmp_{ref} +  c2 * T_{cell_K} * log(Ee) +  c3 * (T_{cell_K} * log(Ee))^2 +
+        beta * Ee * (T_{cell} - T_{ref})
+
+    where :math:`Ee` is the effective irradiance and :math:`T_{cell}`, :math:`T_{cell_K}` the cell temperature in Celsius and Kelvin respectively.
 
     :param goa_effective: Irradiance reaching the module's cells, after reflections and  adjustment for spectrum. [W/m2]
     :param temp_cell:  Cell temperature [C].
@@ -246,8 +263,6 @@ def iv_curve_singlediode(alpha_sc: float, a_ref: float, I_L_ref: float, I_o_ref:
                          dEgdT: float = -0.0002677) -> pd.DataFrame:
     """
     Draw the IV curve according to DeSoto method and the single Diode model.
-
-    More info here: https://pvlib-python.readthedocs.io/en/v0.9.0/auto_examples/plot_singlediode.html
 
     :param alpha_sc: The short-circuit current temperature coefficient of the  module in units of A/C.
     :param a_ref: The product of the usual diode ideality factor (n, unitless),

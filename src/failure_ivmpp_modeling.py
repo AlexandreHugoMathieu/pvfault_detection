@@ -17,7 +17,7 @@ def scale_system_iv_curve(pv_params: dict,
                           g_poa_effective: float,
                           temp_cell: float) -> pd.DataFrame:
     """
-    Scale the module IV curve to the whole system via Idc and Vdc
+    Scale the module IV curve to the whole system via Idc and Vdc assuming there is no extra losses.
 
     :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
             pvlib.pvsystem.retrieve_sam("CECmod")
@@ -47,7 +47,7 @@ def shading_cond(azimuth: pd.Series,
                  shade_azi_max: float = 180,
                  shade_alt: float = 50):
     """
-    Return a boolean pd.Series to check if the installation is under the shadow of a fixed-rectangular shape or not
+    Return a boolean pd.Series to check if the installation is under the shadow of a fixed-rectangular shape or not.
 
     :param azimuth: Azimuth of the sun position pd.Series
     :param elevation: Sky elevation of the sun position pd.Series
@@ -73,12 +73,12 @@ def fixed_shading(poa_global: pd.Series,
                   shade_azi_max: float = 180,
                   shade_alt: float = 50):
     """
-    Simulate the effects of a fixed-horizon rectangular shading on operational current and voltage.
+    Simulate the effects of a fixed-rectangular (like a building) shading on operational variables.
 
-    Assume the shading is covering the whole installation (no partial shading)
+    Assume the shadow covers the whole installation (no partial shading).
 
     Imp and Vmp are modelled according to King's models and recalculated with the new irradiation that is assumed to
-    be poa_diffuse under shading.
+    be equal to the diffuse irradiation only under shading.
 
     The AC/DC ratio is recalculated according to a KNN model fitted on historical data.
 
@@ -89,9 +89,9 @@ def fixed_shading(poa_global: pd.Series,
     :param idc: DC current [A]
     :param vdc: DC Voltage [V]
     :param pac: AC power [W]
-    :param azimuth: Azimuth to use for sun's path to evaluate if the shading is effective or not
-    :param elevation: Elevation to use for sun's path to evaluate if the shading is effective or not
-    :param temp_cell: Cell temperature to model imp and vmp variations under shading
+    :param azimuth: Azimuth to use for sun's path to evaluate if the shading is effective or not [°]
+    :param elevation: Elevation to use for sun's path to evaluate if the shading is effective or not [°]
+    :param temp_cell: Cell temperature to estimate imp and vmp variations under shading [C]
     :param shade_azi_min: Minimum shade azimuth of the rectangular shape [°]
     :param shade_azi_max: Maximum shade azimuth of the rectangular shape [°]
     :param shade_alt: Maximum shade elevation of the rectangular shape [°]
@@ -107,6 +107,7 @@ def fixed_shading(poa_global: pd.Series,
     shading_bool = shading_cond(azimuth, elevation, shade_azi_min, shade_azi_max, shade_alt)
 
     # Fit King models and calculate the ratio between only diffuse and whole irradiation to later simulate shading
+    # Cell temperature assumed constant under shading and without shading
     (c1, alpha, i_ref, c2, c3, beta, v_ref) = fit_imp_vmp_king(poa_global, temp_cell, idc, vdc)
     imp_ratio = imp_king(poa_diffuse, temp_cell, c1, alpha, i_ref) / \
                 imp_king(poa_global, temp_cell, c1, alpha, i_ref)
@@ -150,8 +151,8 @@ def clipping(poa_global: pd.Series,
     :param idc: DC current [A]
     :param vdc: DC Voltage [V]
     :param pac: AC power [W]
-    :param temp_cell: Cell temperature to model imp and vmp variations under clipping
-    :param pac_max: maximum limit of the inverter
+    :param temp_cell: Cell temperature to estimate imp and vmp variations under clipping [C]
+    :param pac_max: maximum limit of the inverter [W]
     :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
                     pvlib.pvsystem.retrieve_sam("CECmod")
 
@@ -172,6 +173,7 @@ def clipping(poa_global: pd.Series,
 
     # Draw the IV curve for each point for Pac > pac_max and move the operating point to go under pac_max
     for idx in tqdm(pac_clipping[pac_clipping > pac_max].index, desc="Clipping"):
+        # Cell temperature assumed constant with and without clipping
         vi_curve = scale_system_iv_curve(pv_params, vdc.loc[idx], idc.loc[idx], poa_global.loc[idx], temp_cell.loc[idx])
 
         # Assume the DC / AC efficiency is equal to the observed one, is constant over I/V and only affects the current
@@ -221,7 +223,7 @@ def soiling_effect(poa_global: pd.Series,
     :param rainfall: Rain accumulated in each time period defined by "rain_accum_period". [mm]
     :param pm2_5: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 microns. [g/m^3]
     :param pm10: Airborne particulate matter (PM) concentration with aerodynamic diameter less than 10 microns. [g/m^3]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations under soiling.
+    :param temp_cell: Cell temperature to estimate imp and vmp variations under soiling. [C]
     :param tilt: Tilt of the PV panels from horizontal. [degree]
     :param depo_veloc:  Deposition or settling velocity of particulates. [m/s] (default values from pvlib hsu)
     :param cleaning_threshold: Amount of rain in an accumulation period needed to clean the PV modules. [mm]
@@ -242,6 +244,7 @@ def soiling_effect(poa_global: pd.Series,
     poa_global_soiling = poa_global * s_ratio
 
     # Fit King models and calculate the ratio between soiled and cleaned module
+    # Cell temperature assumed constant with and without soiling
     (c1, alpha, i_ref, c2, c3, beta, v_ref) = fit_imp_vmp_king(poa_global, temp_cell, idc, vdc)
     imp_ratio = imp_king(poa_global_soiling, temp_cell, c1, alpha, i_ref) / \
                 imp_king(poa_global, temp_cell, c1, alpha, i_ref)
@@ -287,7 +290,7 @@ def bdiode_sc(poa_global: pd.Series,
     :param idc: DC current [A]
     :param vdc: DC Voltage [V]
     :param pac: AC power [W]
-    :param temp_cell: Cell temperature used to model Imp and Vmp to calculate their variations with short-circuit
+    :param temp_cell: Cell temperature used to estimate imp and vmp variations with short-circuit [C]
     :param sc_date: Date of the bypass short circuit
     :param pv_params: dictionary with module characteristics, can be extracted with pvlib thanks to
                 pvlib.pvsystem.retrieve_sam("CECmod")

@@ -62,14 +62,14 @@ def get_pm_data(start_date="20210101",
     """
 
     Extract airborne particulate matter (PM) concentration with aerodynamic diameter less than 2.5 and 10 microns from
-    data.gouv.
+    data.gouv [g/m3].
     https://files.data.gouv.fr/lcsqa/concentrations-de-polluants-atmospheriques-reglementes/temps-reel
 
     Data available only from 2021 for Grenoble.
     Hourly granularity.
 
-    :param start_date: Fate from which to start to extract particule matter concentrations
-    :param end_date: Fate to which to stop to extract particule matter concentrations
+    :param start_date: Date from which to start to extract particulate matter concentrations
+    :param end_date: Date to which to stop to extract particulate matter concentrations
     :param freq: Frequency of the recipient (forward fill will be applied if the frequency if finer than an hour)
     :param site: Which site to extract data for
     :param store_pkl: If true, store the data into pickle file
