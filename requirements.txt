@@ -1,9 +1,10 @@
-ipykernel>=6.17.0
-jupyter>=1.0.0
+ipykernel==6.17.0
+jupyter==1.0.0
 matplotlib>=3.6.1
 pandas==1.4.2
 psutil==5.9.3
-pvanalytics>=0.1.2
-pvlib>=0.9.3
-scikit-learn>=1.1.3
-tqdm>=4.64.1
+pvanalytics==0.1.2
+pvlib==0.9.3
+scikit-learn==1.1.3
+tqdm==4.64.1
+notebook==6.5.2

@@ -441,6 +441,8 @@ if __name__ == '__main__':
                   n_diode=secret.loc["n_diode"])
 
     if plot:
+        from src.utils.helio_fmt import setup_helio_plt
+        setup_helio_plt()
         _ = default_effect_plot(idc, vdc, pdc, pac, idc_s, vdc_s, pdc_s, pac_s, "Shading")
         _ = default_effect_plot(idc, vdc, pdc, pac, idc_c, vdc_c, pdc_c, pac_c, "Clipping")
         _ = default_effect_plot(idc, vdc, pdc, pac, idc_soil, vdc_soil, pdc_soil, pac_soil, "Soiling")
